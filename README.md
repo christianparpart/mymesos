@@ -2,6 +2,7 @@
 
 
 ```!sh
+./prepare.sh # run this to have the latest docker binary locally present
 docker-compose up
 ```
 
