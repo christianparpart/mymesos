@@ -1,0 +1,56 @@
+version: '2'
+
+services:
+  zk1:
+    image: jplock/zookeeper
+    hostname: zk1
+    ports:
+      - "2181:2181"
+
+  mesos-master1:
+    image: mesosphere/mesos-master:0.28.1
+    hostname: mesos-master1
+    ports:
+      - "5050:5050"
+    environment:
+      - MESOS_PORT=5050
+      - MESOS_ZK=zk://zk1:2181/mesos
+      - MESOS_QUORUM=1
+      - MESOS_REGISTRY=in_memory
+      - MESOS_LOG_DIR=/var/log/mesos
+      - MESOS_WORK_DIR=/var/tmp/mesos
+    depends_on:
+      - zk1
+
+  mesos-slave1:
+    image: mesosphere/mesos-slave:0.28.1
+    privileged: true
+    hostname: mesos-slave1
+    environment:
+      - MESOS_PORT=5051
+      - MESOS_MASTER=zk://zk1:2181/mesos
+      - MESOS_SWITCH_USER=0
+      - MESOS_CONTAINERIZERS=docker,mesos
+      - MESOS_LOG_DIR=/var/log/mesos
+      - MESOS_WORK_DIR=/var/tmp/mesos
+      - MESOS_LAUNCHER=posix
+    ports:
+      - "5051:5051"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /cgroup:/cgroup
+      - /sys:/sys
+      - ./docker:/usr/local/bin
+    depends_on:
+      - zk1
+      - mesos-master1
+
+  marathon:
+    image: mesosphere/marathon:v1.1.1
+    command: --master zk://zk1:2181/mesos --zk zk://zk1:2181/marathon --logging_level warn --http_port 8080 --enable_features vips
+    hostname: marathon1
+    ports:
+     - "8080:8080"
+    depends_on:
+      - zk1
+      - mesos-master1
