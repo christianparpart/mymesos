@@ -42,7 +42,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /cgroup:/cgroup
       - /sys:/sys
-      - ./docker:/usr/local/bin
+      - ./docker/docker:/usr/bin/docker
     depends_on:
       - zk1
       - mesos-master1
